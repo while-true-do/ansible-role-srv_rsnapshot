@@ -1,0 +1,51 @@
+---
+# tasks/main.yml for rsnapshot
+- name: "Set rsnapshot to state {{ wtd_rsnapshot_state }}"
+  become: true
+  package:
+    name: "{{ wtd_rsnapshot_packages }}"
+    state: "{{ wtd_rsnapshot_state }}"
+
+- name: 'Include configuration for notification'
+  include_tasks: notify.yml
+  when: wtd_rsnapshot_notify
+
+- name: 'Set configurations for rsnapshot'
+  become: true
+  template:
+    src: "rsnapshot.conf.j2"
+    dest: "/etc/rsnapshot-{{ item.name }}.conf"
+    mode: 0644
+    owner: root
+    group: root
+    validate: "rsnapshot -c %s configtest"
+  with_items:
+    - "{{ wtd_rsnapshot_configs }}"
+
+- name: "Create Timers for Backup"
+  become: true
+  template:
+    src: "rsnapshot.timer.j2"
+    dest: "/etc/systemd/system/rsnapshot-{{ item.0.name }}-{{ item.1.name }}.timer"
+    owner: root
+    group: root
+    mode: 0644
+  loop: "{{ wtd_rsnapshot_configs | subelements('retains') }}"
+
+- name: "Create Service for Backup"
+  become: true
+  template:
+    src: "rsnapshot@.service.j2"
+    dest: "/etc/systemd/system/rsnapshot-{{ item.name }}@.service"
+    owner: root
+    group: root
+    mode: 0644
+  loop: "{{ wtd_rsnapshot_configs }}"
+
+- name: "Enable and start service rsnapshot timer"
+  become: true
+  systemd:
+    name: "rsnapshot-{{ item.0.name }}-{{ item.1.name }}.timer"
+    state: started
+    enabled: yes
+  loop: "{{ wtd_rsnapshot_configs | subelements('retains') }}"

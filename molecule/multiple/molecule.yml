@@ -1,0 +1,60 @@
+---
+scenario:
+  name: multiple
+  test_sequence:
+    - lint
+    - destroy
+    - dependency
+    - syntax
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - side_effect
+    - verify
+    - destroy
+
+lint:
+  name: yamllint
+
+dependency:
+  name: galaxy
+  options:
+    role-file: requirements.yml
+
+driver:
+  name: docker
+
+platforms:
+  - name: rsnapshot-centos7-multiple
+    image: ${image:-centos:7}
+    command: /usr/sbin/init
+    volume_mounts:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /tmp/wtd_testing:/mnt/files
+    tmpfs:
+      - /run
+      - /tmp
+    # privileged: true
+    groups:
+      - ${pygroup:-python}
+    environment:
+      container: docker
+
+provisioner:
+  name: ansible
+  lint:
+    name: ansible-lint
+  inventory:
+    group_vars:
+      all:
+        ansible_user: ansible
+      python3:
+        ansible_python_interpreter: /usr/bin/python3
+
+verifier:
+  name: testinfra
+  options:
+    v: 1
+  lint:
+    name: flake8

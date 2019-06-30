@@ -1,0 +1,41 @@
+---
+- name: Prepare
+  hosts: all
+  roles:
+    - role: while_true_do.rpo_epel
+  tasks:
+    - name: Create folder
+      become: true
+      file:
+        path: "/root/{{ item }}"
+        state: directory
+      with_items:
+        - doc
+        - picture
+        - videos
+
+    - name: fill files for root
+      become: true
+      command: 'dd bs=2M count=10 if=/dev/random of=/root/{{ item }}/dummyfile-{{ item }}'
+      with_items:
+        - doc
+        - picture
+        - videos
+
+    - name: Create user folder
+      become: true
+      file:
+        path: "/home/user/{{ item }}"
+        state: directory
+      with_items:
+        - doc
+        - picture
+        - videos
+
+    - name: fill files for root
+      become: true
+      command: 'dd bs=2M count=10 if=/dev/random of=/home/user/{{ item }}/dummyfile-{{ item }}'
+      with_items:
+        - doc
+        - picture
+        - videos

@@ -1,0 +1,99 @@
+# TODO: Edit the tests and remove this line.
+# Some examples are given below.
+
+import os
+import pytest
+import testinfra.utils.ansible_runner
+
+testinfra_hosts = testinfra.utils.ansible_runner.AnsibleRunner(
+    os.environ['MOLECULE_INVENTORY_FILE']).get_hosts('all')
+
+variablen = [{
+    'name': 'root',
+    'retains': [{'name': 'daily', 'value': 7, 'time': '00:30'},
+                {'name': 'weekly', 'value': 4, 'time': '00:40'},
+                {'name': 'monthly', 'value': 2}],
+    'backups': [{'src': '/root/doc', 'target': 'localhost/root'},
+                {'src': '/root/picture', 'target': 'localhost/root'},
+                {'src': '/root/videos', 'target': 'localhost/root'}],
+    'execStart': '/usr/bin/rsnapshot -c /etc/rsnapshot-root.conf %i',
+    }, {
+    'name': 'user',
+    'retains': [{'name': 'daily', 'value': 7}],
+    'backups': [{'src': '/home/user/doc', 'target': 'localhost/user'
+                 }, {'src': '/home/user/picture',
+                'target': 'localhost/user'},
+                {'src': '/home/user/videos',
+                'target': 'localhost/user'}],
+    'execStart': '/usr/bin/rsnapshot -c /etc/rsnapshot-user.conf %i',
+    }]
+
+
+def test_rsnapshot_config_file(host):
+    file = host.file('/etc/rsnapshot.conf')
+
+    assert file.exists
+    assert file.user == 'root'
+    assert file.group == 'root'
+    assert file.mode == 0o644
+
+
+#@pytest.mark.parametrize("name,retains,backups,execstart", [
+#    ("root", "[{'name': 'daily', 'value': 7, 'time': '00:30'}",
+#     "{'src': '/root/doc', 'target': 'localhost/root'}]",
+#     "/usr/bin/rsnapshot -c /etc/rsnapshot-root.conf %i" ),
+#     ("user", "{'name': 'daily', 'value': 7}",
+#      "{'src': '/home/user/doc', 'target': 'localhost/user'}",
+#      "/usr/bin/rsnapshot -c /etc/rsnapshot-user.conf %i")
+#])
+#def test_rsnapshot_systemd_timer(host,name,retains,backups,execstart):
+#    for retain in retains:
+#        file = host.file('/etc/systemd/system/rsnapshot-'
+#                        + name
+#                         + '-' + retain.name + '.timer')
+#        assert file.exists
+#        assert file.user == 'root'
+#        assert file.group == 'root'
+#        assert file.mode == 0o644
+#        #assert file.contains('Unit=rsnapshot-' + config.get('name')
+#        #                     + '@' + retain.get('name') + '.service')
+#        #if retain.get('time') is None:
+#        #    assert file.contains('OnCalendar=00:30')
+#        #else:
+#        #    assert file.contains('OnCalendar=' + retain.get('time') )
+#
+
+def test_rsnapshot_systemd_service_user_daily(host):
+    host.ansible("systemd","name=rsnapshot-user@daily.service state=started","become=true")
+
+    snapshotfolder = host.file('/.snapshot')
+    assert snapshotfolder.exists
+
+#def test_rsnapshot_systemd_service(host):
+#    global variablen
+#    for config in variablen:
+#        file = host.file('/etc/systemd/system/rsnapshot-'
+#                         + config.get('name') + '@.service')
+#
+#        assert file.exists
+#        assert file.user == 'root'
+#        assert file.group == 'root'
+#        assert file.mode == 0o644
+#        assert file.contains('ExecStart=/usr/bin/rsnapshot %I 2>&1')
+#
+#
+def test_rsnapshot_systemd_timer_endabled_started(host):
+    global variablen
+    for config in variablen:
+        for retain in config.get('retains'):
+            srv = host.service("rsnapshot-" + config.get('name') + "-"
+                               + retain.get('name') + ".timer")
+
+            assert srv.is_running
+            assert srv.is_enabled
+
+
+def test_rsnapshot_package(host):
+    pkg = host.package('rsnapshot')
+
+    assert pkg.is_installed

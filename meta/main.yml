@@ -1,0 +1,22 @@
+---
+dependencies: []
+
+galaxy_info:
+  role_name: srv_rsnapshot
+  author: while-true-do.org
+  description: Install and configure rsnapshot.
+  company: while-true-do.org
+
+  github_branch: master
+  license: BSD
+
+  min_ansible_version: 2.0
+
+  platforms:
+    - name: EL
+      versions:
+        - 7
+
+  galaxy_tags:
+    - backup
+    - rsnapshot
