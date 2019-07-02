@@ -21,8 +21,8 @@ wtd_rsnapshot_config_cmd_rsync: "/usr/bin/rsync"
 wtd_rsnapshot_config_cmd_logger: "/usr/bin/logger"
 
 # for rsnapreport.pl verbose >= 3 is needed
-wtd_rsnapshot_config_verbose: 3
 # --stats also needed for rsnapreport.pl
+wtd_rsnapshot_config_verbose: 3
 
 wtd_rsnapshot_config_loglevel: 3
 wtd_rsnapshot_config_logfile: "/var/log/rsnapshot"
