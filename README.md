@@ -69,29 +69,31 @@ If nothing is needed, please write "None."
 ## Role Variables
 
 ```yaml
-# defaults/main.yml
+# defaults/main.yml for rsnapshot
+
+# You can set the state to ["present"|"absent"|"latest"]
 wtd_rsnapshot_state: "present"
 wtd_rsnapshot_packages: "rsnapshot"
 
+wtd_rsnapshot_notify: false
+
+#
+## Default Values
+## can be overwrite
+##
+#
 wtd_rsnapshot_config_version: 1.2
 
-wtd_rsnapshot_config_snapshot_root: "/backup"
+wtd_rsnapshot_config_snapshot_root: "/.snapshots/"
 
 wtd_rsnapshot_config_cmd_rm: "/usr/bin/rm"
 wtd_rsnapshot_config_cmd_rsync: "/usr/bin/rsync"
 wtd_rsnapshot_config_cmd_logger: "/usr/bin/logger"
 
-wtd_rsnapshot_config_retains:
-  - name: "alpha"
-    value: "6"
-  - name: "beta"
-    value: "7"
-  - name: "gamma"
-    value: "4"
-  - name: "delta"
-    value: "3"
-
+# for rsnapreport.pl verbose >= 3 is needed
+# --stats also needed for rsnapreport.pl
 wtd_rsnapshot_config_verbose: 3
+
 wtd_rsnapshot_config_loglevel: 3
 wtd_rsnapshot_config_logfile: "/var/log/rsnapshot"
 
@@ -100,6 +102,29 @@ wtd_rsnapshot_config_lockfile: "/var/run/rsnapshot.pid"
 wtd_rsnapshot_config_backups:
   - backup: /home/
     target: localhost/
+
+wtd_rsnapshot_timer_time: '00:30'
+wtd_rsnapshot_service_execStart: /usr/bin/rsnapshot %I
+
+wtd_rsnapshot_configs:
+  - name: dummy
+    retains:
+      - name: "alpha"
+        value: "6"
+        # 6 alpha backups a day (once every 4 hours, at 0,4,8,12,16,20)
+        time: '00/4:00'
+      - name: "beta"
+        value: "7"
+        # 1 beta backup every day, at 11:50PM
+        time: '23:50'
+      - name: "gamma"
+        value: "4"
+        # 1 gamma backup every week, at 11:40PM, on Saturdays (6th day of week)
+        time: 'Sat *-*-* 23:40'
+      - name: "delta"
+        value: "3"
+        # 1 delta backup every month, at 11:30PM on the 1st day of the month
+        time: '*-*-01 23:30'
 ```
 
 ## Example Playbook
@@ -122,7 +147,6 @@ Simple Example:
 
 Advanced Example:
 rsnapshot is not designed to run multiple instance at the same time by using one config-file.
-Because of this its possible to set the `wtd_rsnapshot_config_multi_enabled` to `true` and configure multiple configurations of rsnapshot include systemd timers and services.
 Below you find a playbook with variable to get an illustration how the role works if you want to use multiple configurations.
 *NOTE:* Please only run this playbook in a test machine. Its for testing purpose.
 
@@ -132,32 +156,38 @@ Below you find a playbook with variable to get an illustration how the role work
   roles:
     - { role: while_true_do.rsnapshot }
   vars:
-    - wtd_rsnapshot_config:
-      - name: Backup_etc_systemd
+    wtd_rsnapshot_configs:
+      - name: 'root'
         retains:
-          - name: daily
-            value: '7'
+          - name: 'daily'
+            time: '*-*-* 00:35'
+            value: 7
+          - name: 'weekly'
+            time: 'Sun *-*-* 00:00'
+            value: 4
+          - name: 'monthly'
+            time: '*-*-1 01:00'
+            value: 2
         backups:
-          - src: /etc/systemd
-            target: localhost/
-        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-Backup_etc_systemd.conf %i"
-        logfile: "/var/log/rsnapshot-Backup_etc_systemd"
-      - name: homes
+          - src: /root/doc
+            target: localhost/root
+          - src: /root/picture
+            target: localhost/root
+          - src: /root/videos
+            target: localhost/root
+        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-root.conf %i"
+      - name: 'user'
         retains:
-          - name: hourly
-            value: '12'
-            time: '*-*-* *:24:00'
-          - name: montly
-            value: '3'
-            time: '1-*-* 00:00:00'
+          - name: 'daily'
+            value: 7
         backups:
-          - src: /home/
-            target: homes/
-        snapshot_root: '/backup_home'
-        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-homes.conf %i"
-        logfile: "/var/log/rsnapshot-homes"
-    - wtd_rsnapshot_config_snapshot_root: /backup
-    - wtd_rsnapshot_timer_time: "*-*-* 00:00:00"
+          - src: /home/user/doc
+            target: localhost/user
+          - src: /home/user/picture
+            target: localhost/user
+          - src: /home/user/videos
+            target: localhost/user
+        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-user.conf %i"
 ```
 
 After you have execute the playbook you can check with following commands:
@@ -166,17 +196,8 @@ systemctl list-timers | grep rsnapshot
 ls -la /etc/rsnapshot-*
 ```
 
-For each entry a separate configuration file gets created under /etc/rsnapshot-*.
-Additionally to this for each retains a timer will be created. And of course you can create for each retains a different time. This helps to run different retains at different times. Its also possible to set a default time by set wtd_rsnapshot_timer_time, but the time of a retain will overwrite it (can be seen in the above example by "Backup_etc_systemd"
-
-
-Following variables, started with __wtd_rsnapshot_config__ get overwritten by wtd_rsnapshot_config_multi if defined:
-- config_version
-- snapshot_root
-- verbose
-- loglevel
-- lockfile
-- timer
+For each entry in wtd_rsnapshot_config a separate configuration file gets created under /etc/rsnapshot-*.
+Additionally to this for each retains a timer will be created. And of course you can create for each retains a different time. This helps to run different retains at different times.
 
 
 ## Testing
