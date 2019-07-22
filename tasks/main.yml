@@ -1,51 +1,83 @@
 ---
 # tasks/main.yml for rsnapshot
-- name: "Set rsnapshot to state {{ wtd_rsnapshot_state }}"
-  become: true
+
+- name: Manage rsnapshot Packages
   package:
-    name: "{{ wtd_rsnapshot_packages }}"
-    state: "{{ wtd_rsnapshot_state }}"
-
-- name: 'Include configuration for notification'
-  include_tasks: notify.yml
-  when: wtd_rsnapshot_notify
-
-- name: 'Set configurations for rsnapshot'
+    name: "{{ wtd_srv_rsnapshot_package }}"
+    state: "{{ wtd_srv_rsnapshot_package_state }}"
   become: true
+  tags:
+    - rsnapshot
+    - backup
+    - package
+
+- name: Manage rsnapshot Configuration
   template:
     src: "rsnapshot.conf.j2"
-    dest: "/etc/rsnapshot-{{ item.name }}.conf"
+    dest: "/etc/rsnapshot.conf"
+    owner: "root"
+    group: "root"
     mode: 0644
-    owner: root
-    group: root
     validate: "rsnapshot -c %s configtest"
-  with_items:
-    - "{{ wtd_rsnapshot_configs }}"
-
-- name: "Create Timers for Backup"
   become: true
+  tags:
+    - rsnapshot
+    - backup
+    - configuration
+
+# systemd scheduler
+- name: Manage rsnapshot backup Service File
+  template:
+    src: "rsnapshot.service.j2"
+    dest: "/etc/systemd/system/rsnapshot@.service"
+    owner: "root"
+    group: "root"
+    mode: 0644
+  become: true
+  tags:
+    - rsnapshot
+    - backup
+    - configuration
+    - scheduler
+    - service
+    - systemd
+    - timer
+
+- name: Manage rsnapshot backup Timer File
   template:
     src: "rsnapshot.timer.j2"
-    dest: "/etc/systemd/system/rsnapshot-{{ item.0.name }}-{{ item.1.name }}.timer"
-    owner: root
-    group: root
+    dest: "/etc/systemd/system/rsnapshot-{{ retain.name }}.timer"
+    owner: "root"
+    group: "root"
     mode: 0644
-  loop: "{{ wtd_rsnapshot_configs | subelements('retains') }}"
-
-- name: "Create Service for Backup"
   become: true
-  template:
-    src: "rsnapshot@.service.j2"
-    dest: "/etc/systemd/system/rsnapshot-{{ item.name }}@.service"
-    owner: root
-    group: root
-    mode: 0644
-  loop: "{{ wtd_rsnapshot_configs }}"
+  loop: "{{ wtd_srv_rsnapshot_conf.retains }}"
+  loop_control:
+    loop_var: retain
+  tags:
+    - rsnapshot
+    - backup
+    - configuration
+    - scheduler
+    - service
+    - systemd
+    - timer
 
-- name: "Enable and start service rsnapshot timer"
-  become: true
+- name: Manage rsnapshot backup Timer
   systemd:
-    name: "rsnapshot-{{ item.0.name }}-{{ item.1.name }}.timer"
-    state: started
-    enabled: yes
-  loop: "{{ wtd_rsnapshot_configs | subelements('retains') }}"
+    name: "rsnapshot-{{ retain.name }}.timer"
+    state: "started"
+    enabled: "{{ retain.enabled | default('true') }}"
+    daemon_reload: true
+  become: true
+  loop: "{{ wtd_srv_rsnapshot_conf.retains }}"
+  loop_control:
+    loop_var: retain
+  tags:
+    - rsnapshot
+    - backup
+    - configuration
+    - scheduler
+    - service
+    - systemd
+    - timer
