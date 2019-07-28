@@ -20,193 +20,218 @@ license: BSD-3-Clause
 
 
 # Ansible Role: srv_rsnapshot
-| Install and configure rsnapshot.
+
+An Ansible Role to install and configure rsanpshot.
 
 ## Motivation
 
-Easy, everyone needs backups. :)
-And keep in mind:
-**No Backup, No Mercy**
+Everybody needs a valid backup. As often stated: "no backup, no mercy".
 
-## Installation
+## Description
 
-Install from [Ansible Galaxy](https://galaxy.ansible.com/while_true_do/srv_rsnapshot)
+This Ansible Role installs and configures [rsnapshot](https://rsansphot.org).
 
-```
-ansible-galaxy install while_true_do.rsnapshot
-```
-
-Install from [Github](https://github.com/while-true-do/srv_rsnapshot)
-
-```
-git clone https://github.com/while-true-do/srv_rsnapshot.git while_true_do.srv_rsnapshot
-```
+-   install packages
+-   configure rsnapshot
+-   create systemd service
+-   create systemd timers
 
 ## Requirements
 
 Used Modules:
 
--   [packages](http://docs.ansible.com/ansible/latest/package_module.html)
--   [template](http://docs.ansible.com/ansible/latest/template_module.html)
--   [systemd](https://docs.ansible.com/ansible/latest/systemd_module.html)
--   [shell](https://docs.ansible.com/ansible/latest/shell_module.html)
--   [command](https://docs.ansible.com/ansible/latest/command_module.html)
--   [file](https://docs.ansible.com/ansible/latest/file_module.html)
+-   [Ansible package Module](http://docs.ansible.com/ansible/latest/package_module.html)
+-   [Ansible template Module](http://docs.ansible.com/ansible/latest/template_module.html)
+-   [Ansible systemd Module](https://docs.ansible.com/ansible/latest/systemd_module.html)
+-   [Ansible service Module](https://docs.ansible.com/ansible/latest/service_module.html)
 
-## Dependencies
+## Installation
 
-<!--
-Describe, if other roles are needed and link them here.
-You also have to put the dependencies in the requirements.yml.
+Install from [Ansible Galaxy](https://galaxy.ansible.com/while_true_do/srv_rsnapshot)
+```
+ansible-galaxy install while_true_do.srv_rsnapshot
+```
+
+Install from [Github](https://github.com/while-true-do/ansible-role-srv_rsnapshot)
+```
+git clone https://github.com/while-true-do/ansible-role-srv_rsnapshot.git while_true_do.srv_rsnapshot
+```
+
+Dependencies:
+
+For CentOS Systems, the [EPEL](https://fedoraproject.org/wiki/EPEL) repository
+must be enabled. You can achive this by running the
+[while_true_do.rpo_epel](https://github.com/while-true-do/ansible-role-rpo_epel)
+Ansible Role.
 
 ```
 ansible-galaxy install -r requirements.yml
 ```
 
-If nothing is needed, please write "None."
--->
+## Usage
 
-## Role Variables
+### Role Variables
 
-```yaml
+```
+---
 # defaults/main.yml for rsnapshot
 
-# You can set the state to ["present"|"absent"|"latest"]
-wtd_rsnapshot_state: "present"
-wtd_rsnapshot_packages: "rsnapshot"
+## Package Management
+wtd_srv_rsnapshot_package: "rsnapshot"
+# State can be present|latest|absent
+wtd_srv_rsnapshot_package_state: "present"
 
-wtd_rsnapshot_notify: false
-
-#
-## Default Values
-## can be overwrite
-##
-#
-wtd_rsnapshot_config_version: 1.2
-
-wtd_rsnapshot_config_snapshot_root: "/.snapshots/"
-
-wtd_rsnapshot_config_cmd_rm: "/usr/bin/rm"
-wtd_rsnapshot_config_cmd_rsync: "/usr/bin/rsync"
-wtd_rsnapshot_config_cmd_logger: "/usr/bin/logger"
-
-# for rsnapreport.pl verbose >= 3 is needed
-# --stats also needed for rsnapreport.pl
-wtd_rsnapshot_config_verbose: 3
-
-wtd_rsnapshot_config_loglevel: 3
-wtd_rsnapshot_config_logfile: "/var/log/rsnapshot"
-
-wtd_rsnapshot_config_lockfile: "/var/run/rsnapshot.pid"
-
-wtd_rsnapshot_config_backups:
-  - backup: /home/
-    target: localhost/
-
-wtd_rsnapshot_timer_time: '00:30'
-wtd_rsnapshot_service_execStart: /usr/bin/rsnapshot %I
-
-wtd_rsnapshot_configs:
-  - name: dummy
-    retains:
-      - name: "alpha"
-        value: "6"
-        # 6 alpha backups a day (once every 4 hours, at 0,4,8,12,16,20)
-        time: '00/4:00'
-      - name: "beta"
-        value: "7"
-        # 1 beta backup every day, at 11:50PM
-        time: '23:50'
-      - name: "gamma"
-        value: "4"
-        # 1 gamma backup every week, at 11:40PM, on Saturdays (6th day of week)
-        time: 'Sat *-*-* 23:40'
-      - name: "delta"
-        value: "3"
-        # 1 delta backup every month, at 11:30PM on the 1st day of the month
-        time: '*-*-01 23:30'
+## Configuration Management
+# Below you can find some example configuration.
+# You MUST define "retains: []" and "backup: []"
+# Please consult man rsnapshot for more information or https://rsnapshot.org
+wtd_srv_rsnapshot_conf: []
+# version: 1.2
+# snapshot_root: "/.snapshots/"
+# no_create_root: 1
+# cmd_cp: "/usr/bin/cp"
+# cmd_rm: "/usr/bin/rm"
+# cmd_rsync: "/usr/bin/rsync"
+# cmd_ssh: "/usr/bin/ssh"
+# cmd_logger: "/usr/bin/logger"
+# cmd_du: "/usr/bin/du"
+# cmd_rsnapshot_diff: "/usr/bin/rsnapshot-diff"
+# cmd_preexec: ""
+# cmd_postexec: ""
+# linux_lvm_cmd_lvcreate: "/usr/sbin/lvcreate"
+# linux_lvm_cmd_lvremove: "/usr/sbin/lvremove"
+# linux_lvm_cmd_mount: "/usr/bin/mount"
+# linux_lvm_cmd_umount: "/usr/bin/umount"
+# retains:
+#   - name: "some name" # the name for the retains
+#     value: 15         # how many backups do want to keep
+#     time: "daily"     # systemd timer time format
+#     enabled: true     # define if the timer should be enabled (default true)
+# verbose: 2
+# loglevel: 3
+# logfile: "/var/log/rsnapshot/rsnapshot.log"
+# lockfile: "/var/run/rsnapshot.pid"
+# stop_on_stale_lockfile: 0
+# rsync_short_args: ""
+# rsync_long_args: ""
+# ssh_args: "-p 22"
+# du_args: "-csh"
+# one_fs: 0
+# includes: []          # global include patterns
+# excludes: []          # global exclude patterns
+# include_files: []     # global include_files
+# exclude_files: []     # global exclude_files
+# link_dest: 0
+# sync_first: 0
+# use_lazy_deletes: 0
+# rsync_numtries: 0
+# linux_lvm_snapshotsize: "100M"
+# linux_lvm_snapshotname: "rsnapshot"
+# linux_lvm_vgpath: "/dev"
+# linux_lvm_mountpath: "/path/to/mount/lvm/snapshot/during/backup"
+# The backup list can take multiple statements
+# backups:
+#   - comment: ""       # useful, if you need a comment line
+#   - src: "/foo/"      # define source and destination of your backups
+#     dest: "foo/"
+#     options: ""       # you can backup specific options like excludes
+#   - script: "foo.sh"  # define a script and a destination for a scripted backup
+#     dest: "foo/"
+#   - exec: "foo.sh"    # Just run some command
 ```
 
-## Example Playbook
+### Example Playbook
 
-Simple Example:
+Running Ansible
+[Roles](https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html)
+can be done in a
+[playbook](https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html).
 
-```yaml
-- hosts: servers
+#### Simple
+
+Doing daily backups of your localhost and keep them for 14 days.
+
+```
+---
+- hosts: all
   roles:
-    - { role: while_true_do.rsnapshot }
-  vars:
-    - wtd_rsnapshot_config_shapshot_root: '/backup/'
-    - wtd_rsnapshot_config_retains:
-      - name: 'daily'
-        value: '7'
-    - wtd_rsnapshot_config_backups:
-      - backup: /home/cinux
-        target: home/
+    - role: while_true_do.rpo_epel
+    - role: while_true_do.srv_rsnapshot
+      wtd_srv_rsnapshot_conf:
+        retains:
+          - name: "daily"
+            value: 14
+            time: "daily"
+            enabled: true
+        backups:
+          - comment: "# LOCALHOST"
+          - src: "/home/"
+            dest: "localhost/"
+          - src: "/var/log"
+            dest: "localhost/"
+          - src: "/etc/"
+            dest: "localhost/"
 ```
 
-Advanced Example:
-rsnapshot is not designed to run multiple instance at the same time by using one config-file.
-Below you find a playbook with variable to get an illustration how the role works if you want to use multiple configurations.
-*NOTE:* Please only run this playbook in a test machine. Its for testing purpose.
+#### Advanced
 
-```yaml
-- hosts: $VMIP
-  become: yes
+This example does daily, weekly and monthly backups for localhost and
+example.com (via backup user).
+
+```
+- hosts: all
   roles:
-    - { role: while_true_do.rsnapshot }
-  vars:
-    wtd_rsnapshot_configs:
-      - name: 'root'
-        retains:
-          - name: 'daily'
-            time: '*-*-* 00:35'
-            value: 7
-          - name: 'weekly'
-            time: 'Sun *-*-* 00:00'
-            value: 4
-          - name: 'monthly'
-            time: '*-*-1 01:00'
-            value: 2
-        backups:
-          - src: /root/doc
-            target: localhost/root
-          - src: /root/picture
-            target: localhost/root
-          - src: /root/videos
-            target: localhost/root
-        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-root.conf %i"
-      - name: 'user'
-        retains:
-          - name: 'daily'
-            value: 7
-        backups:
-          - src: /home/user/doc
-            target: localhost/user
-          - src: /home/user/picture
-            target: localhost/user
-          - src: /home/user/videos
-            target: localhost/user
-        execStart: "/usr/bin/rsnapshot -c /etc/rsnapshot-user.conf %i"
+    - role: while_true_do.rpo_epel
+    - role: while_true_do.srv_rsnapshot
+      wtd_srv_rsnapshot_conf:
+      retains:
+        - name: "daily"
+          value: 14
+          time: "daily"
+        - name: "weekly"
+          value: 8
+          time: "weekly"
+        - name: "monthly"
+          value: 12
+          time: "monthly"
+      backups:
+        - comment: "LOCALHOST"
+        - src: "/etc/"
+          dest: "localhost/"
+        - src: "/home/"
+          dest: "localhost/"
+        - src: "/var/log/"
+          dest: "localhost/"
+        - comment: "EXAMPLE.COM"
+        - src: "backup@example.com:/etc/"
+          dest: "example.com/"
+        - src: "backup@example.com:/home/"
+          dest: "example.com/"
+        - src: "backup@example.com:/var/log/"
+          dest: "example.com/"
 ```
 
-After you have execute the playbook you can check with following commands:
-```
-systemctl list-timers | grep rsnapshot
-ls -la /etc/rsnapshot-*
-```
+## Known Issues
 
-For each entry in wtd_rsnapshot_config a separate configuration file gets created under /etc/rsnapshot-*.
-Additionally to this for each retains a timer will be created. And of course you can create for each retains a different time. This helps to run different retains at different times.
-
+1.  RedHat Testing is currently not possible in public, due to limitations
+    in subscriptions.
+2.  Some services and features cannot be tested properly, due to limitations
+    in docker.
 
 ## Testing
-Most of the "generic" tests are located in the Test Library.
-Ansible specific testing is done with Molecule.
-Infrastructure testing is done with testinfra.
-Automated testing is done with Travis CI.
 
-## Contribute / Bugs
+Most of the "generic" tests are located in the
+[Test Library](https://github.com/while-true-do/test-library).
+
+Ansible specific testing is done with
+[Molecule](https://molecule.readthedocs.io/en/stable/).
+
+Infrastructure testing is done with
+[testinfra](https://testinfra.readthedocs.io/en/stable/).
+
+Automated testing is done with [Travis CI](https://travis-ci.com/while-true-do).
+
+## Contribute
 
 Thank you so much for considering to contribute. We are very happy, when somebody
 is joining the hard work. Please fell free to open
@@ -218,7 +243,7 @@ See who has contributed already in the [kudos.txt](./kudos.txt).
 
 ## License
 
-This work is licensed under a [BSD License](https://opensource.org/licenses/BSD-3-Clause).
+This work is licensed under a [BSD-3-Clause License](https://opensource.org/licenses/BSD-3-Clause).
 
 ## Contact
 

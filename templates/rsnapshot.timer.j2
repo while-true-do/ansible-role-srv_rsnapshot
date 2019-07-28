@@ -1,11 +1,12 @@
+{{ ansible_managed | comment }}
+
 [Unit]
-Description=rsnapshot {{ item.0.name }} - {{ item.1.name }}  backup
+Description=rsnapshot backup {{ retain.name }} timer
 
 [Timer]
-# 14:30 is the clock time when to start it
-OnCalendar={{ item.1.time | default(wtd_rsnapshot_timer_time) }}
+OnCalendar={{ retain.time }}
 Persistent=true
-Unit=rsnapshot-{{ item.0.name }}@{{ item.1.name }}.service
+Unit=rsnapshot@{{ retain.name }}.service
 
 [Install]
 WantedBy=timers.target

@@ -1,22 +1,39 @@
 ---
-dependencies: []
+# meta file for while_true_do.srv_rsnapshot
 
 galaxy_info:
   role_name: srv_rsnapshot
-  author: while-true-do.org
-  description: Install and configure rsnapshot.
-  company: while-true-do.org
-
-  github_branch: master
+  author: while-true-do.io
+  description: An Ansible Role to install and configure rsanpshot.
   license: BSD
 
-  min_ansible_version: 2.0
+  min_ansible_version: 2.7
 
+  # Supported platforms: https://galaxy.ansible.com/api/v1/platforms/
+  # Please also maintain
+  # - molecule/default/molecule.yml
+  # - molecule/default/tests/*
+  # - .travis.yml
   platforms:
     - name: EL
       versions:
         - 7
 
+    - name: Fedora
+      versions:
+        - 29
+        - 30
+
+  # Some very common tags are:
+  # system, virtualization, development, monitoring, packaging, container
+  # configuration, cloud, security
   galaxy_tags:
-    - backup
     - rsnapshot
+    - backup
+    - configuration
+    - package
+    - scheduler
+    - service
+    - system
+
+dependencies: []

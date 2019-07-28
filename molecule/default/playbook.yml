@@ -2,5 +2,24 @@
 - name: Converge
   hosts: all
   roles:
-    # TODO: Provide a proper playbook, to test features of your role.
     - role: while_true_do.srv_rsnapshot
+      wtd_srv_rsnapshot_conf:
+        retains:
+          - name: 'daily'
+            value: 8
+            time: 'daily'
+          - name: 'weekly'
+            time: 'weekly'
+            value: 4
+            enabled: true
+          - name: 'monthly'
+            time: 'monthly'
+            value: 2
+        backups:
+          - comment: "LOCALHOST"
+          - src: "/etc/"
+            dest: "localhost/"
+          - src: "/home/"
+            dest: "localhost/"
+          - src: "/var/log/"
+            dest: "localhost/"

@@ -1,57 +1,65 @@
 ---
 # defaults/main.yml for rsnapshot
 
-# You can set the state to ["present"|"absent"|"latest"]
-wtd_rsnapshot_state: "present"
-wtd_rsnapshot_packages: "rsnapshot"
+## Package Management
+wtd_srv_rsnapshot_package: "rsnapshot"
+# State can be present|latest|absent
+wtd_srv_rsnapshot_package_state: "present"
 
-wtd_rsnapshot_notify: false
-
-#
-## Default Values
-## can be overwrite
-##
-#
-wtd_rsnapshot_config_version: 1.2
-
-wtd_rsnapshot_config_snapshot_root: "/.snapshots/"
-
-wtd_rsnapshot_config_cmd_rm: "/usr/bin/rm"
-wtd_rsnapshot_config_cmd_rsync: "/usr/bin/rsync"
-wtd_rsnapshot_config_cmd_logger: "/usr/bin/logger"
-
-# for rsnapreport.pl verbose >= 3 is needed
-# --stats also needed for rsnapreport.pl
-wtd_rsnapshot_config_verbose: 3
-
-wtd_rsnapshot_config_loglevel: 3
-wtd_rsnapshot_config_logfile: "/var/log/rsnapshot"
-
-wtd_rsnapshot_config_lockfile: "/var/run/rsnapshot.pid"
-
-wtd_rsnapshot_config_backups:
-  - backup: /home/
-    target: localhost/
-
-wtd_rsnapshot_timer_time: '00:30'
-wtd_rsnapshot_service_execStart: /usr/bin/rsnapshot %I
-
-wtd_rsnapshot_configs:
-  - name: dummy
-    retains:
-      - name: "alpha"
-        value: "6"
-        # 6 alpha backups a day (once every 4 hours, at 0,4,8,12,16,20)
-        time: '00/4:00'
-      - name: "beta"
-        value: "7"
-        # 1 beta backup every day, at 11:50PM
-        time: '23:50'
-      - name: "gamma"
-        value: "4"
-        # 1 gamma backup every week, at 11:40PM, on Saturdays (6th day of week)
-        time: 'Sat *-*-* 23:40'
-      - name: "delta"
-        value: "3"
-        # 1 delta backup every month, at 11:30PM on the 1st day of the month
-        time: '*-*-01 23:30'
+## Configuration Management
+# Below you can find some example configuration.
+# You MUST define "retains: []" and "backup: []"
+# Please consult man rsnapshot for more information or https://rsnapshot.org
+wtd_srv_rsnapshot_conf: []
+# version: 1.2
+# snapshot_root: "/.snapshots/"
+# no_create_root: 1
+# cmd_cp: "/usr/bin/cp"
+# cmd_rm: "/usr/bin/rm"
+# cmd_rsync: "/usr/bin/rsync"
+# cmd_ssh: "/usr/bin/ssh"
+# cmd_logger: "/usr/bin/logger"
+# cmd_du: "/usr/bin/du"
+# cmd_rsnapshot_diff: "/usr/bin/rsnapshot-diff"
+# cmd_preexec: ""
+# cmd_postexec: ""
+# linux_lvm_cmd_lvcreate: "/usr/sbin/lvcreate"
+# linux_lvm_cmd_lvremove: "/usr/sbin/lvremove"
+# linux_lvm_cmd_mount: "/usr/bin/mount"
+# linux_lvm_cmd_umount: "/usr/bin/umount"
+# retains:
+#   - name: "some name" # the name for the retains
+#     value: 15         # how many backups do want to keep
+#     time: "daily"     # systemd timer time format
+#     enabled: true     # define if the timer should be enabled (default true)
+# verbose: 2
+# loglevel: 3
+# logfile: "/var/log/rsnapshot/rsnapshot.log"
+# lockfile: "/var/run/rsnapshot.pid"
+# stop_on_stale_lockfile: 0
+# rsync_short_args: ""
+# rsync_long_args: ""
+# ssh_args: "-p 22"
+# du_args: "-csh"
+# one_fs: 0
+# includes: []          # global include patterns
+# excludes: []          # global exclude patterns
+# include_files: []     # global include_files
+# exclude_files: []     # global exclude_files
+# link_dest: 0
+# sync_first: 0
+# use_lazy_deletes: 0
+# rsync_numtries: 0
+# linux_lvm_snapshotsize: "100M"
+# linux_lvm_snapshotname: "rsnapshot"
+# linux_lvm_vgpath: "/dev"
+# linux_lvm_mountpath: "/path/to/mount/lvm/snapshot/during/backup"
+# The backup list can take multiple statements
+# backups:
+#   - comment: ""       # useful, if you need a comment line
+#   - src: "/foo/"      # define source and destination of your backups
+#     dest: "foo/"
+#     options: ""       # you can backup specific options like excludes
+#   - script: "foo.sh"  # define a script and a destination for a scripted backup
+#     dest: "foo/"
+#   - exec: "foo.sh"    # Just run some command
